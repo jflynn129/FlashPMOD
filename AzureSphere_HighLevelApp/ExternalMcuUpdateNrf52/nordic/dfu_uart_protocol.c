@@ -126,6 +126,7 @@ void ProgramImages(DfuImageData *imagesToWrite, size_t imageCount, DfuResultHand
         exitHandler(DfuResult_Fail);
         return;
     }
+	Log_Debug("Wirting %d images to PMOD.\n", imageCount);
 
     resultHandler = exitHandler;
     allImages = imagesToWrite;
@@ -710,6 +711,7 @@ static StateTransition HandleStart(void)
 
     dts.pingId = 1;
 
+	Log_Debug("Put PMOD into DFU mode.\n");
     // Put the nRF52 into DFU mode.
     GPIO_SetValue(gpioResetFd, GPIO_Value_Low);
     GPIO_SetValue(gpioDfuFd, GPIO_Value_Low);
@@ -849,7 +851,7 @@ static StateTransition HandleMtuReceivedResponse(void)
     // checked and the isInstalled and installedVersion fields 
     // have to be set accordingly
     else {
-        Log_Debug("Requesting details of firmware present on nRF52:\n");
+        Log_Debug("Requesting details of firmware present on PMOD:\n");
         dts.state = DfuState_GetFirmwareDetails;
     }
     return StateTransition_MoveImmediately;

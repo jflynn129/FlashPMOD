@@ -1,0 +1,5 @@
+*/*.emSession
+*/*/bin/
+*/*/obj/
+*/.vs
+PMODBootloader/ses/Output

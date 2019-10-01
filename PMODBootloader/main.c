@@ -5,10 +5,10 @@
  */
 /** @file
  *
- * @defgroup bootloader_secure_ble main.c
+ * @defgroup bootloader_ble main.c
  * @{
  * @ingroup dfu_bootloader_api
- * @brief Bootloader project main file for secure DFU.
+ * @brief Bootloader main file
  *
  */
 
@@ -136,9 +136,10 @@ static void dfu_observer(nrf_dfu_evt_type_t evt_type)
             set_color(RED_LED);
             break;
         case NRF_DFU_EVT_TRANSPORT_ACTIVATED:
-            set_color(GREEN_LED);
+            set_color(BLUE_LED);
             break;
         case NRF_DFU_EVT_DFU_STARTED:
+            set_color(GREEN_LED);
             break;
         default:
             break;
@@ -160,10 +161,12 @@ int main(void)
     (void) NRF_LOG_INIT(nrf_bootloader_dfu_timer_counter_get);
     NRF_LOG_DEFAULT_BACKENDS_INIT();
 
-    NRF_LOG_INFO("Inside main");
+    NRF_LOG_INFO("Initialization complete, Inside main");
 
     ret_val = nrf_bootloader_init(dfu_observer);
     APP_ERROR_CHECK(ret_val);
+
+    NRF_LOG_INFO("Bootloader has been initialized, start the app");
 
     // Either there was no DFU functionality enabled in this project or the DFU module detected
     // no ongoing DFU operation and found a valid main application.
