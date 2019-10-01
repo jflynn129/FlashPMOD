@@ -72,7 +72,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
-    <TargetHardwareDirectory>..\..\..\..\Hardware\mt3620_rdb</TargetHardwareDirectory>
+    <TargetHardwareDirectory>..\..\Hardware\mt3620_rdb</TargetHardwareDirectory>
     <TargetHardwareDefinition>sample_hardware.json</TargetHardwareDefinition>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">

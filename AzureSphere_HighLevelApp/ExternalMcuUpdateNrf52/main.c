@@ -38,14 +38,18 @@ static GPIO_Value_Type buttonState = GPIO_Value_High;
 // To write an image to the Nordic board, add the data and binary files as
 // resources to the solution and modify this object. The first image should
 // be the softdevice; the second image is the application.
-static DfuImageData images[] = {{.datPathname = "s132_nrf52_6.1.0_softdevice.dat",
-                                 .binPathname = "s132_nrf52_6.1.0_softdevice.bin",
-                                 .firmwareType = DfuFirmware_Softdevice,
-                                 .version = 6001000},
+static DfuImageData images[] = { 
+		                        {.datPathname = "s132_nrf52_6.1.0_softdevice.dat",
+								 .binPathname = "s132_nrf52_6.1.0_softdevice.bin",
+								 .firmwareType = DfuFirmware_Softdevice,
+								 .version = 6001000
+	                             },
                                 {.datPathname = "blinkyV1.dat",
                                  .binPathname = "blinkyV1.bin",
                                  .firmwareType = DfuFirmware_Application,
-                                 .version = 1}};
+                                 .version = 1
+                                 }
+                                };
 
 static const size_t imageCount = sizeof(images) / sizeof(images[0]);
 
@@ -110,14 +114,20 @@ static EventData buttonPollTimerEvent = {.eventHandler = &ButtonPollTimerEventHa
 ///     Set up SIGTERM termination handler, initialize peripherals, and set up event handlers.
 /// </summary>
 /// <returns>0 on success, or -1 on failure</returns>
+/// <notes>
+///     This Demonstratioin Program uses the following IO interfaces:
+///      - SAMPLE_NRF52_RESET (GPIO28)
+///      - SAMPLE_NRF52_DFU   (GPIO26)
+///      - SAMPLE_BUTTON_1    (BUTTON A)
+///      - SAMPLE_NRF52_UART  (ISU1)
 static int InitPeripheralsAndHandlers(void)
 {
-    nrfResetGpioFd =
-        GPIO_OpenAsOutput(SAMPLE_NRF52_RESET, GPIO_OutputMode_OpenDrain, GPIO_Value_High);
+    nrfResetGpioFd = GPIO_OpenAsOutput(SAMPLE_NRF52_RESET, GPIO_OutputMode_OpenDrain, GPIO_Value_High);
     if (nrfResetGpioFd == -1) {
         Log_Debug("ERROR: Could not open SAMPLE_NRF52_RESET: %s (%d).\n", strerror(errno), errno);
         return -1;
     }
+    Log_Debug("\n\nAssert SAMPLE_NRF52_RESET\n");
     GPIO_SetValue(nrfResetGpioFd, GPIO_Value_Low);
 
     struct sigaction action;
@@ -140,18 +150,19 @@ static int InitPeripheralsAndHandlers(void)
         Log_Debug("ERROR: Could not open UART: %s (%d).\n", strerror(errno), errno);
         return -1;
     }
+    Log_Debug("Open UART for communicatioins. .\n");
     // uartFd will be added to the epoll when needed (check epoll protocol)
 
-    nrfDfuModeGpioFd =
-        GPIO_OpenAsOutput(SAMPLE_NRF52_DFU, GPIO_OutputMode_OpenDrain, GPIO_Value_High);
+    nrfDfuModeGpioFd = GPIO_OpenAsOutput(SAMPLE_NRF52_DFU, GPIO_OutputMode_OpenDrain, GPIO_Value_High);
     if (nrfDfuModeGpioFd == -1) {
         Log_Debug("ERROR: Could not open SAMPLE_NRF52_DFU: %s (%d).\n", strerror(errno), errno);
         return -1;
     }
+    Log_Debug("Opening SAMPLE_NRF52_DFU to notify PMOD when to download the firmware\n");
 
     InitUartProtocol(nrfUartFd, nrfResetGpioFd, nrfDfuModeGpioFd, epollFd);
 
-    Log_Debug("Opening SAMPLE_BUTTON_1 as input\n");
+    Log_Debug("Opening SAMPLE_BUTTON_1 (Button A) as input\n");
     triggerUpdateButtonGpioFd = GPIO_OpenAsInput(SAMPLE_BUTTON_1);
     if (triggerUpdateButtonGpioFd == -1) {
         Log_Debug("ERROR: Could not open button GPIO: %s (%d).\n", strerror(errno), errno);
@@ -159,18 +170,16 @@ static int InitPeripheralsAndHandlers(void)
     }
 
     struct timespec buttonPressCheckPeriod = {0, 1000000};
-    buttonPollTimerFd = CreateTimerFdAndAddToEpoll(epollFd, &buttonPressCheckPeriod,
-                                                   &buttonPollTimerEvent, EPOLLIN);
+    buttonPollTimerFd = CreateTimerFdAndAddToEpoll(epollFd, &buttonPressCheckPeriod, &buttonPollTimerEvent, EPOLLIN);
     if (buttonPollTimerFd == -1) {
         return -1;
     }
 
-    // Take nRF52 out of reset, allowing its application to start
-    GPIO_SetValue(nrfResetGpioFd, GPIO_Value_High);
+    inDfuMode = false;  //not in DFU mode until the user presses SAMPLE_BUTTON_1
 
-    Log_Debug("\nStarting firmware update...\n");
-    inDfuMode = true;
-    ProgramImages(images, imageCount, &DfuTerminationHandler);
+    // Take nRF52 out of reset, allowing its application to start
+    Log_Debug("Deassert SAMPLE_NRF52_RESET to start PMOD operating\n\n");
+    GPIO_SetValue(nrfResetGpioFd, GPIO_Value_High);
 
     return 0;
 }
@@ -180,7 +189,7 @@ static int InitPeripheralsAndHandlers(void)
 /// </summary>
 static void ClosePeripheralsAndHandlers(void)
 {
-    Log_Debug("Closing file descriptors\n");
+    Log_Debug("Closing all file descriptors\n");
     CloseFdAndPrintError(buttonPollTimerFd, "ButtonPollTimer");
     CloseFdAndPrintError(triggerUpdateButtonGpioFd, "TriggerUpdateButtonGpio");
     CloseFdAndPrintError(nrfResetGpioFd, "NrfResetGpio");
@@ -194,7 +203,15 @@ static void ClosePeripheralsAndHandlers(void)
 /// </summary>
 int main(int argc, char *argv[])
 {
-    Log_Debug("DFU firmware update application\n");
+	Log_Debug("\n");
+	Log_Debug("     ****\r\n");
+	Log_Debug("    **  **     PMOD/DFU Firmware Update Demonstration\\r\n");
+	Log_Debug("   **    **\r\n");
+	Log_Debug("  ** ==== **\r\n");
+	Log_Debug("\r\n");
+	Log_Debug("When you press Button A, the application will Program the PMOD with the \n");
+	Log_Debug("application that has been included with this demonstration software.\n");
+		
     if (InitPeripheralsAndHandlers() != 0) {
         terminationRequired = true;
     }
