@@ -30,10 +30,12 @@ static int nrfUartFd = -1;
 static int nrfResetGpioFd = -1;
 static int nrfDfuModeGpioFd = -1;
 static int triggerUpdateButtonGpioFd = -1;
+static int triggerResetButtonGpioFd = -1;
 static int buttonPollTimerFd = -1;
 
 // State variables
 static GPIO_Value_Type buttonState = GPIO_Value_High;
+static GPIO_Value_Type BbuttonState = GPIO_Value_High;
 
 // To write an image to the Nordic board, add the data and binary files as
 // resources to the solution and modify this object. The first image should
@@ -105,6 +107,27 @@ static void ButtonPollTimerEventHandler(EventData *eventData)
         }
         buttonState = newButtonState;
     }
+
+	// check to see if the user wants to reset the PMOD and start preprogrammed operations
+	result = GPIO_GetValue(triggerResetButtonGpioFd, &newButtonState);
+	if (result != 0) {
+		Log_Debug("ERROR: Could not read SAMPLE_BUTTON_2 GPIO: %s (%d).\n", strerror(errno), errno);
+		terminationRequired = true;
+		return;
+	}
+	if (BbuttonState != newButtonState) {
+		if (newButtonState == GPIO_Value_Low) {
+			GPIO_SetValue(nrfResetGpioFd, GPIO_Value_Low);
+			Log_Debug("\nAssert Reset\n");
+			inDfuMode = false;
+			BbuttonState = newButtonState;
+		}
+		else {
+			GPIO_SetValue(nrfResetGpioFd, GPIO_Value_High);
+			Log_Debug("\nRestart PMOD\n");
+		}
+		BbuttonState = newButtonState;
+	}
 }
 
 // event handler data structures. Only the event handler field needs to be populated.
@@ -119,10 +142,11 @@ static EventData buttonPollTimerEvent = {.eventHandler = &ButtonPollTimerEventHa
 ///      - SAMPLE_NRF52_RESET (GPIO28)
 ///      - SAMPLE_NRF52_DFU   (GPIO26)
 ///      - SAMPLE_BUTTON_1    (BUTTON A)
+///      - SAMPLE_BUTTON_2    (BUTTON B)
 ///      - SAMPLE_NRF52_UART  (ISU1)
 static int InitPeripheralsAndHandlers(void)
 {
-    nrfResetGpioFd = GPIO_OpenAsOutput(SAMPLE_NRF52_RESET, GPIO_OutputMode_OpenDrain, GPIO_Value_High);
+	nrfResetGpioFd = GPIO_OpenAsOutput(SAMPLE_NRF52_RESET, GPIO_OutputMode_OpenDrain, GPIO_Value_High);
     if (nrfResetGpioFd == -1) {
         Log_Debug("ERROR: Could not open SAMPLE_NRF52_RESET: %s (%d).\n", strerror(errno), errno);
         return -1;
@@ -169,6 +193,13 @@ static int InitPeripheralsAndHandlers(void)
         return -1;
     }
 
+	Log_Debug("Opening SAMPLE_BUTTON_2 (Button B) as input\n");
+	triggerResetButtonGpioFd = GPIO_OpenAsInput(SAMPLE_BUTTON_2);
+	if (triggerResetButtonGpioFd == -1) {
+		Log_Debug("ERROR: Could not open button GPIO: %s (%d).\n", strerror(errno), errno);
+		return -1;
+	}
+
     struct timespec buttonPressCheckPeriod = {0, 1000000};
     buttonPollTimerFd = CreateTimerFdAndAddToEpoll(epollFd, &buttonPressCheckPeriod, &buttonPollTimerEvent, EPOLLIN);
     if (buttonPollTimerFd == -1) {
@@ -192,6 +223,7 @@ static void ClosePeripheralsAndHandlers(void)
     Log_Debug("Closing all file descriptors\n");
     CloseFdAndPrintError(buttonPollTimerFd, "ButtonPollTimer");
     CloseFdAndPrintError(triggerUpdateButtonGpioFd, "TriggerUpdateButtonGpio");
+	CloseFdAndPrintError(triggerResetButtonGpioFd, "TriggerResetButtonGpio");
     CloseFdAndPrintError(nrfResetGpioFd, "NrfResetGpio");
     CloseFdAndPrintError(nrfDfuModeGpioFd, "NrfDfuModeGpio");
     CloseFdAndPrintError(nrfUartFd, "NrfUart");
@@ -206,11 +238,15 @@ int main(int argc, char *argv[])
 	Log_Debug("\n");
 	Log_Debug("     ****\r\n");
 	Log_Debug("    **  **     PMOD/DFU Firmware Update Demonstration\\r\n");
-	Log_Debug("   **    **\r\n");
-	Log_Debug("  ** ==== **\r\n");
+
+	Log_Debug("   **    **    for the Avnet\r\n");
+	Log_Debug("  ** ==== **   Azure Sphere MT3620 Starter Kit\r\n");
 	Log_Debug("\r\n");
-	Log_Debug("When you press Button A, the application will Program the PMOD with the \n");
-	Log_Debug("application that has been included with this demonstration software.\n");
+	Log_Debug(">When you press Button A, the application will Program the PMOD with the \n");
+	Log_Debug("application that has been included with this demonstration software.\n\n");
+	Log_Debug(">When you press Button B, the PMOD will be reset and the programmed \n");
+	Log_Debug("applicatioin will be started.\n\n");
+
 		
     if (InitPeripheralsAndHandlers() != 0) {
         terminationRequired = true;

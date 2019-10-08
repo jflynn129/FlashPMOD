@@ -5,7 +5,7 @@
   "EntryPoint": "/bin/app",
   "CmdArgs": [],
   "Capabilities": {
-    "Gpio": [ "$SAMPLE_NRF52_RESET", "$SAMPLE_NRF52_DFU", "$SAMPLE_BUTTON_1" ],
+    "Gpio": [ "$SAMPLE_NRF52_RESET", "$SAMPLE_NRF52_DFU", "$SAMPLE_BUTTON_1", "$SAMPLE_BUTTON_2" ],
     "Uart": [ "$SAMPLE_NRF52_UART" ]
   },
   "ApplicationType": "Default"
