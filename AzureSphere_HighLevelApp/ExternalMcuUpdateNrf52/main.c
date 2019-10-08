@@ -238,6 +238,7 @@ int main(int argc, char *argv[])
 	Log_Debug("\n");
 	Log_Debug("     ****\r\n");
 	Log_Debug("    **  **     PMOD/DFU Firmware Update Demonstration\\r\n");
+
 	Log_Debug("   **    **    for the Avnet\r\n");
 	Log_Debug("  ** ==== **   Azure Sphere MT3620 Starter Kit\r\n");
 	Log_Debug("\r\n");
@@ -245,6 +246,7 @@ int main(int argc, char *argv[])
 	Log_Debug("application that has been included with this demonstration software.\n\n");
 	Log_Debug(">When you press Button B, the PMOD will be reset and the programmed \n");
 	Log_Debug("applicatioin will be started.\n\n");
+
 		
     if (InitPeripheralsAndHandlers() != 0) {
         terminationRequired = true;

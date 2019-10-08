@@ -46,6 +46,7 @@
 // MT3620 SK: Connect external dfu signal using SOCKET1: TX.
 #define SAMPLE_NRF52_DFU AVNET_MT3620_SK_GPIO1
 
+
 // MT3620 SK: Connect external NRF52 UART using SOCKET1: "MISO" (RX), "SCK" (TX), "CS" (CTS), and "MOSI" (RTS).
 #define SAMPLE_NRF52_UART AVNET_MT3620_SK_ISU1_UART
 

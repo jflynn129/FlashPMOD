@@ -32,3 +32,4 @@
         {"Name": "SAMPLE_NRF52_UART", "Type": "Uart", "Mapping": "AVNET_MT3620_SK_ISU1_UART", "Comment": "MT3620 SK: Connect external NRF52 UART using SOCKET1: \"MISO\" (RX), \"SCK\" (TX), \"CS\" (CTS), and \"MOSI\" (RTS)."}
     ]
 }
+
