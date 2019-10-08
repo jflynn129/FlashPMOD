@@ -454,7 +454,7 @@ static void TimeoutTimerExpiredEvent(EventData *eventData)
 
     dts.state = DfuState_Failed;
 
-    Log_Debug("ERROR: Could not communicate with board.  Operation timed out.\n");
+    Log_Debug("ERROR: Could not communicate with PMOD.  Operation timed out.\n");
     MoveToNextDfuState();
 }
 
